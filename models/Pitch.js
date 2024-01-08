@@ -5,7 +5,10 @@ var mongoose = require('mongoose'),
 const ReservationSchema = new Schema({
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
-    isAvailable: {type:Boolean, required: true, default:true}
+    isAvailable: {type:String, required: true, default:"Müsait"},
+    reservationPhoneNumber:{type:String, required:false},
+    reservationName:{type:String, required:false},
+    user_id:{type: Schema.Types.ObjectId,required:false}
 });
 
 const ReservationDays = new Schema({

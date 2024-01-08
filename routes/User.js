@@ -1,5 +1,5 @@
 const express = require("express")
-const { signup, signin, signout} = require("../controllers/User")
+const { signup, signin, signout, deleteUser} = require("../controllers/User")
 const { check } = require("express-validator")
 const router = express.Router()
 const {verifyUser,verifyOwner} = require("../middleware/Auth") 
@@ -14,8 +14,8 @@ router.post("/signin",signin)
 
 router.get("/checkuser",verifyUser,(req,res,next)=>{res.send("hello user")})
 
-router.get("/checkowner",verifyOwner,(req,res,next)=>{res.send("hello owner")})
-
 router.post("/signout",signout)
+
+router.post("/deleteUser",verifyUser,deleteUser)
 
 module.exports = router

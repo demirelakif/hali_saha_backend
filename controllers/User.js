@@ -52,7 +52,7 @@ exports.signin = async (req, res) => {
             }
 
             // create token
-            const token = jwt.sign({ _id: user._id, phoneNumber: user.phoneNumber }, process.env.SECRET, { expiresIn: process.env.TOKEN_EXPIRATION });
+            const token = jwt.sign({ _id: user._id, phoneNumber: user.phoneNumber,name:user.name }, process.env.SECRET, { expiresIn: process.env.TOKEN_EXPIRATION });
 
             const { _id, name, phoneNumber } = user;
 
@@ -74,10 +74,11 @@ exports.signin = async (req, res) => {
 };
 
 
-exports.setOwner = (req, res) => {
-    res.clearCookie("token")
-    res.status(200).json({
-        message: "Logout successfully"
+exports.deleteUser = async(req, res) => {
+    await User.findByIdAndDelete(req.user_id).then(()=>{
+        res.status(200).json({message:"User başarıyla silindi."})
+    }).catch((error)=>{
+        res.status(400).json({error:error.message})
     })
 }
 

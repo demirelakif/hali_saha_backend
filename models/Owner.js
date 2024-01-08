@@ -14,7 +14,7 @@ var OwnerSchema = new Schema({
         index: { unique: true},
         required: true,
     },
-    taxNo:{type:Number, /*değişir*/required:false, index:{unique:true}},
+    taxNo:{type:Number, /*değişir*/required:false},
     address:{type:String, required:true},
     tcIdNo:{type:String, required:true}
 },
