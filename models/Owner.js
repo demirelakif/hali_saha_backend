@@ -3,23 +3,28 @@ var mongoose = require('mongoose'),
     bcrypt = require('bcrypt'),
     SALT_WORK_FACTOR = 10;
 
+    const LocationSchema = new mongoose.Schema({
+        lat: { type: Number, default: 'Point', required: true },
+        lng: { type: Number, default: 'Point', required: true },
+        name: { type: String, required: true },
+      }, { _id: false });
 
-
-var OwnerSchema = new Schema({
-    name: { type: String, required: true },
-    password: { type: String, required: true },
-    email: { type: String, required: false},
-    phoneNumber: {
-        type: String,
-        index: { unique: true},
-        required: true,
+    var OwnerSchema = new Schema({
+        name: { type: String, required: true },
+        password: { type: String, required: true },
+        email: { type: String, required: false},
+        phoneNumber: {
+            type: String,
+            index: { unique: true},
+            required: true,
+        },
+        taxNo:{type:Number, /*değişir*/required:false},
+        tcIdNo:{type:String, required:true},
+        location: { type: LocationSchema, required: true, index: '2dsphere' },
     },
-    taxNo:{type:Number, /*değişir*/required:false},
-    address:{type:String, required:true},
-    tcIdNo:{type:String, required:true}
-},
-    { timestamps: true }
-);
+        { timestamps: true }
+    );
+    
 
 
 

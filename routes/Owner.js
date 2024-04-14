@@ -1,5 +1,5 @@
 const express = require("express")
-const { signup, signin, signout, getMyRequests, updateRequest, deleteOwner} = require("../controllers/Owner")
+const { signup, signin, signout, getMyRequests, updateRequest, deleteOwner, getOwnerById} = require("../controllers/Owner")
 const { check } = require("express-validator")
 const router = express.Router()
 const {verifyUser,verifyOwner} = require("../middleware/Auth") 
@@ -18,6 +18,8 @@ router.get("/checkowner",verifyOwner,(req,res,next)=>{res.send("hello owner")})
 router.post("/signout",signout)
 
 router.get("/getMyRequests",verifyOwner,getMyRequests)
+
+router.post("/getOwnerById",getOwnerById)
 
 router.post("/deleteOwner",verifyOwner,deleteOwner)
 

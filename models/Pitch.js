@@ -1,20 +1,28 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema
 
+const LocationSchema = new mongoose.Schema({
+    lat: { type: Number, default: 'Point', required: true },
+    lng: { type: Number, default: 'Point', required: true },
+    name: { type: String, required: true },
+}, { _id: false });
+
 
 const ReservationSchema = new Schema({
-    start_time: { type: Date, required: true },
-    end_time: { type: Date, required: true },
-    isAvailable: {type:String, required: true, default:"Müsait"},
-    reservationPhoneNumber:{type:String, required:false},
-    reservationName:{type:String, required:false},
-    user_id:{type: Schema.Types.ObjectId,required:false}
+    start_time: { type: Number, required: true },
+    isAvailable: { type: String, required: true, default: "Müsait" },
+    reservationPhoneNumber: { type: String, required: false },
+    reservationName: { type: String, required: false },
+    user_id: { type: Schema.Types.ObjectId, required: false },
+    date: { type: Date, required: true },
+    
+    
 });
 
-const ReservationDays = new Schema({
-    reservationTimes: [ReservationSchema],
-    dayName:{type:String,required:true}
-});
+// const ReservationDays = new Schema({
+//     reservationTimes: [ReservationSchema],
+//     dayName:{type:String,required:true}
+// });
 
 var PhotoSchema = new Schema({
     url: { type: String, required: true },
@@ -28,24 +36,26 @@ const SahaOzellikleriSchema = new Schema({
     fileVarMi: { type: Boolean, default: false },
     dus: { type: Boolean, default: false },
     sosyalHaliSahaVarMi: { type: Boolean, default: false },
-    kapaliMi:{type:Boolean,default:false},
-    parkAlani:{type:Boolean,default:false},
-    tribun:{type:Boolean,default:false},
-    playground:{type:Boolean,default:false},
-    kilitliDolap:{type:Boolean,default:false},
-    eldiven:{type:Boolean,default:false},
-    mutfak:{type:Boolean,default:false},
-    scoreBoard:{type:Boolean,default:false},
+    kapaliMi: { type: Boolean, default: false },
+    parkAlani: { type: Boolean, default: false },
+    tribun: { type: Boolean, default: false },
+    playground: { type: Boolean, default: false },
+    kilitliDolap: { type: Boolean, default: false },
+    eldiven: { type: Boolean, default: false },
+    mutfak: { type: Boolean, default: false },
+    scoreBoard: { type: Boolean, default: false },
     // Diğer özellikleri buraya ekleyebilirsiniz.
 }, { _id: false });
 
 
 var PitchSchema = new Schema({
     name: { type: String, required: true },
-    owner: { type: Schema.Types.ObjectId, ref: 'Owner', required:true },
+    owner: { type: Schema.Types.ObjectId, ref: 'Owner', required: true },
     photos: [PhotoSchema],
-    reservations: [ReservationDays],
-    features:SahaOzellikleriSchema
+    reservations: [ReservationSchema],
+    features: SahaOzellikleriSchema,
+    location: { type: LocationSchema, required: true, index: '2dsphere' },
+    rating: { type: Number, required: true, default: 5 }
 },
     { timestamps: true }
 );
@@ -103,6 +113,41 @@ PitchSchema.methods.createDefaultReservations = async function (days, startHour,
     } catch (error) {
         console.error('Hata:', error.message);
     }
+};
+
+PitchSchema.methods.reservePitch = async function (start_time, user_id, reservationName, reservationPhoneNumber) {
+    try {
+        // Rezervasyon çakışmasını kontrol et
+        if (this.isReservationConflict(start_time, new Date())) {
+            throw new Error('Bu zaman dilimi için başka bir rezervasyon bulunmaktadır.');
+        }
+
+        const reservation = {
+            start_time: start_time,
+            isAvailable: "İstek Gönderildi",
+            reservationPhoneNumber: reservationPhoneNumber,
+            reservationName: reservationName,
+            user_id: user_id,
+            date: new Date()
+        };
+
+        this.reservations.push(reservation);
+        await this.save();
+
+        console.log('Saha rezerve edildi:', this);
+        return this; // Opsiyonel olarak, rezerve edilen sahayı geri döndürebilirsiniz.
+    } catch (error) {
+        console.error('Hata:', error.message);
+        throw error;
+    }
+};
+
+
+PitchSchema.methods.isReservationConflict = function (start_time, date) {
+    return this.reservations.some(reservation => {
+        const reservationDate = new Date(reservation.date);
+        return reservation.start_time === start_time && reservationDate.getDate() === date.getDate() && reservationDate.getMonth() === date.getMonth();
+    });
 };
 
 

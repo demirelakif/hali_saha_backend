@@ -124,42 +124,55 @@ exports.signout = (req, res) => {
     })
 }
 
+exports.getOwnerById = async(req,res) => {
+    try {
+        
+        const { id } = req.body; // Aranacak saha adı
+        const owner = await Owner.findById(id)
+
+        res.status(200).json({ owner });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
 exports.getMyRequests = async (req, res) => {
     try {
-        // Bu kodun içinde çalıştırılıyorsa, muhtemelen bir async fonksiyon içindedir.
-        // Bu nedenle, await kullanarak asenkron işlemleri yönetmeliyiz.
         const pitches = await Pitch.find({ owner: req.owner._id });
 
         const requestedReservationTimes = [];
         pitches.forEach((pitch) => {
             pitch.reservations.forEach((reservation) => {
-                reservation.reservationTimes.forEach((time) => {
-                    if (time.isAvailable === 'İstek Gönderildi') {
-                        console.log(time)
-                        requestedReservationTimes.push({time:time,pitchId:pitch._id,reservationDayId:reservation._id,phoneNumber:reservation.reservationPhoneNumber,name:reservation.reservationName,user_id:reservation.user_id});
-                    }
-                });
+                if (reservation.isAvailable === 'İstek Gönderildi') {
+                    requestedReservationTimes.push({
+                        time: reservation.time,
+                        pitchId: pitch._id,
+                        reservationDayId: reservation._id,
+                        phoneNumber: reservation.reservationPhoneNumber,
+                        name: reservation.reservationName,
+                        user_id: reservation.user_id
+                    });
+                }
             });
         });
 
-        res.json({ message: "Gelen İstekler", data: requestedReservationTimes })
-
-        // pitches şu an bir dizi olarak elde edildi
+        res.json({ message: "Gelen İstekler", data: requestedReservationTimes });
 
     } catch (error) {
-        // Hata durumunda hatayı ele alabilirsiniz.
         console.error('Hata oluştu:', error.message);
+        res.status(500).json({ message: "Server Error" });
     }
-}
+};
+
 
 exports.updateRequest = async (req, res) => {
-    const { id, newStatus, pitchId,reservationDayId } = req.body;
+    const {newStatus, pitchId,reservationId } = req.body;
 
     try {
 
         Pitch.findById(pitchId).then(doc=>{
-            const reservationtime = doc.reservations.id(reservationDayId).reservationTimes.id(id)
-            reservationtime["isAvailable"] = newStatus
+            const reservation = doc.reservations.id(reservationId)
+            reservation.isAvailable = newStatus
             doc.save()
             // item["isAvailable"] = "Meşgul"
             // doc.save();
