@@ -9,7 +9,7 @@ const verifyToken = (req, res, next) => {
     }
     try {
         const data = jwt.verify(token, config.SECRET);
-        if(data.phoneNumber){
+        if(data.location){
             req.owner = data;
         }else{
             req.user = data;

@@ -1,5 +1,5 @@
 const express = require("express")
-const {addPitch, getAllPitches, getPitchesByDay, reservePitch, updatePitch, deletePitch, getPitchesByName, getPitchById} = require("../controllers/Pitch")
+const {addPitch, getAllPitches, getPitchesByDay, reservePitch, updatePitch, deletePitch, getPitchesByName, getPitchById, getPitchByDate} = require("../controllers/Pitch")
 const { check } = require("express-validator")
 const router = express.Router()
 const {verifyOwner, verifyUser} = require("../middleware/Auth") 
@@ -13,7 +13,7 @@ router.post("/updatePitch",verifyOwner,updatePitch)
 router.post("/deletePitch",verifyOwner,deletePitch)
 router.post("/getPitchesByName",getPitchesByName)
 router.post("/getPitchById",getPitchById)
-
+router.post("/getPitchByDate",getPitchByDate)
 
 
 module.exports = router

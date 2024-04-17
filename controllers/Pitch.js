@@ -4,7 +4,7 @@ const auth = require("../middleware/Auth");
 const { validationResult } = require("express-validator")
 const jwt = require('jsonwebtoken')
 
-exports.addPitch = async(req, res) => {
+exports.addPitch = async (req, res) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
         return res.status(400).json({
@@ -13,11 +13,10 @@ exports.addPitch = async(req, res) => {
     }
 
     const owner = await Owner.findById(req.owner._id)
-    console.log(owner)
     const pitch = new Pitch({
         ...req.body,
         owner: req.owner._id,  // Owner'ın _id'sini ekleyin,
-        location:owner.location
+        location: owner.location
     });
 
     // console.log(pitch)
@@ -70,7 +69,7 @@ exports.getPitchesByDay = async (req, res) => {
 
 exports.getPitchesByName = async (req, res) => {
     try {
-        
+
         const { name } = req.body; // Aranacak saha adı
         const pitches = await Pitch.find({ 'name': { $regex: new RegExp(name, 'i') } });
 
@@ -82,11 +81,35 @@ exports.getPitchesByName = async (req, res) => {
 
 exports.getPitchById = async (req, res) => {
     try {
-        
+
         const { id } = req.body; // Aranacak saha adı
         const pitch = await Pitch.findById(id)
 
         res.status(200).json({ pitch });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getPitchByDate = async (req, res) => {
+    try {
+
+        const { date, hour } = req.body; // Aranacak saha adı
+
+        const pitchesRemove = []
+        const pitches = await Pitch.find()
+        pitches.map((pitch) => {
+            pitch.reservations.map((reservation) => {
+                if (reservation.start_time === hour && reservation.date.getMonth() === new Date(date).getMonth() && reservation.date.getDay() === new Date(date).getDay() ) {
+                    pitchesRemove.push(pitch);
+                }
+            });
+        });
+
+        var filteredPitches = pitches.filter(function (pitch) {
+            return !pitchesRemove.includes(pitch);
+        });
+        res.status(200).json({ filteredPitches });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -97,7 +120,7 @@ const schedule = require('node-schedule');
 exports.reservePitch = async (req, res) => {
     try {
 
-        const { pitchId, start_time, user_id, reservationName, reservationPhoneNumber } = req.body;
+        const { pitchId, start_time,date, reservationName} = req.body;
 
         const pitch = await Pitch.findById(pitchId);
 
@@ -105,7 +128,7 @@ exports.reservePitch = async (req, res) => {
             return res.status(404).json({ message: "Pitch not found" });
         }
 
-        await pitch.reservePitch(start_time, user_id, reservationName, reservationPhoneNumber);
+        await pitch.reservePitch(start_time, req.user._id, reservationName, req.user.phoneNumber, new Date(date));
 
         res.status(201).json({ message: "Reservation created successfully" });
         // const pitch = await Pitch.findById(req.params.id);

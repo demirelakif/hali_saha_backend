@@ -1,4 +1,5 @@
 const Owner = require("../models/Owner")
+const User = require("../models/User")
 const auth = require("../middleware/Auth");
 const { validationResult } = require("express-validator")
 const jwt = require('jsonwebtoken');
@@ -87,9 +88,9 @@ exports.signin = async (req, res) => {
             }
 
             // create token
-            const token = jwt.sign({ _id: owner._id, phoneNumber: owner.phoneNumber, address: owner.address }, process.env.SECRET, { expiresIn: process.env.TOKEN_EXPIRATION });
+            const token = jwt.sign({ _id: owner._id, phoneNumber: owner.phoneNumber, location:owner.location }, process.env.SECRET, { expiresIn: process.env.TOKEN_EXPIRATION });
 
-            const { _id, name, phoneNumber } = owner;
+            const { _id, name, phoneNumber,location } = owner;
 
             res.json({
                 accessToken: token,
@@ -170,10 +171,15 @@ exports.updateRequest = async (req, res) => {
 
     try {
 
-        Pitch.findById(pitchId).then(doc=>{
+        await Pitch.findById(pitchId).then(async doc=>{
             const reservation = doc.reservations.id(reservationId)
             reservation.isAvailable = newStatus
             doc.save()
+            if(newStatus === "Meşgul"){
+                const user = await User.findById(reservation.user_id)
+                user.reservationsHistory.push(reservation)
+                user.save()
+            }
             // item["isAvailable"] = "Meşgul"
             // doc.save();
         })

@@ -8,15 +8,16 @@ var mongoose = require('mongoose'),
 var UserSchema = new Schema({
     name: { type: String, required: true },
     password: { type: String, required: true },
-    age: { type: Number, required:false },
-    email: { type: String, required: false},
+    age: { type: Number, required: false },
+    email: { type: String, required: false },
     footNum: { type: Number, required: false },
     position: { type: String, required: false },
     phoneNumber: {
         type: String,
-        index: { unique: true},
+        index: { unique: true },
         required: true,
     },
+    reservationsHistory: [{type: Schema.Types.ObjectId, ref:'reservations', required: false }],
 },
     { timestamps: true }
 );

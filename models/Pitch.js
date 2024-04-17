@@ -11,12 +11,8 @@ const LocationSchema = new mongoose.Schema({
 const ReservationSchema = new Schema({
     start_time: { type: Number, required: true },
     isAvailable: { type: String, required: true, default: "Müsait" },
-    reservationPhoneNumber: { type: String, required: false },
-    reservationName: { type: String, required: false },
-    user_id: { type: Schema.Types.ObjectId, required: false },
-    date: { type: Date, required: true },
-    
-    
+    user_id: { type: Schema.Types.ObjectId, ref:'User', required: false },
+    date: { type: Date, required: true },    
 });
 
 // const ReservationDays = new Schema({
@@ -115,10 +111,10 @@ PitchSchema.methods.createDefaultReservations = async function (days, startHour,
     }
 };
 
-PitchSchema.methods.reservePitch = async function (start_time, user_id, reservationName, reservationPhoneNumber) {
+PitchSchema.methods.reservePitch = async function (start_time, user_id, reservationName, reservationPhoneNumber,date) {
     try {
         // Rezervasyon çakışmasını kontrol et
-        if (this.isReservationConflict(start_time, new Date())) {
+        if (this.isReservationConflict(start_time, new Date(date))) {
             throw new Error('Bu zaman dilimi için başka bir rezervasyon bulunmaktadır.');
         }
 
@@ -128,13 +124,13 @@ PitchSchema.methods.reservePitch = async function (start_time, user_id, reservat
             reservationPhoneNumber: reservationPhoneNumber,
             reservationName: reservationName,
             user_id: user_id,
-            date: new Date()
+            date: date
         };
 
         this.reservations.push(reservation);
         await this.save();
 
-        console.log('Saha rezerve edildi:', this);
+        //console.log('Saha rezerve edildi:', this);
         return this; // Opsiyonel olarak, rezerve edilen sahayı geri döndürebilirsiniz.
     } catch (error) {
         console.error('Hata:', error.message);
@@ -144,9 +140,13 @@ PitchSchema.methods.reservePitch = async function (start_time, user_id, reservat
 
 
 PitchSchema.methods.isReservationConflict = function (start_time, date) {
+
     return this.reservations.some(reservation => {
         const reservationDate = new Date(reservation.date);
-        return reservation.start_time === start_time && reservationDate.getDate() === date.getDate() && reservationDate.getMonth() === date.getMonth();
+        //console.log(reservationDate.getMonth(),date.getMonth())
+        if (reservation.start_time == start_time && reservationDate.getMonth() == date.getMonth() && reservationDate.getDay() == date.getDay() ) {
+            return true;
+        }
     });
 };
 
