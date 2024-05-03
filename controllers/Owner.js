@@ -125,6 +125,54 @@ exports.signout = (req, res) => {
     })
 }
 
+exports.getAllOwners = async(req, res) => {
+    try {
+        const owners = await Owner.find();
+
+        res.status(200).json({ owners });
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+}
+
+exports.getOwnersByName = async (req, res) => {
+    try {
+
+        const { name } = req.body; // Aranacak saha adı
+        const owners = await Owner.find({ 'name': { $regex: new RegExp(name, 'i') } });
+
+        res.status(200).json({ owners });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getMyPitches = async (req, res) => {
+    try {
+        // Sahibi bul
+        const owner = await Owner.findById(req.owner._id);
+
+        // Sahibi doğrula
+        if (!owner) {
+            return res.status(404).json({ message: 'Owner not found' });
+        }
+
+        // Sahibi pitch ID'lerini alın
+        const pitchIds = owner.pitches;
+
+        // Pitch modelinden ID'leri kullanarak pitchleri alın
+        const pitches = await Pitch.find({
+            _id: { $in: pitchIds },
+        });
+
+        // Yanıtı pitchlerle birlikte gönder
+        res.status(200).json({ pitches });
+    } catch (error) {
+        // Hata durumunda uygun yanıt gönder
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.getOwnerById = async(req,res) => {
     try {
         

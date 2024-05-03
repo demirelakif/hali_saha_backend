@@ -18,7 +18,8 @@ exports.addPitch = async (req, res) => {
         owner: req.owner._id,  // Owner'ın _id'sini ekleyin,
         location: owner.location
     });
-
+    owner.pitches.push(pitch)
+    owner.save()
     // console.log(pitch)
     pitch.save()
         .then(async () => {
@@ -60,7 +61,6 @@ exports.getPitchesByDay = async (req, res) => {
                 reservation.dayName === req.body.dayName
             );
         });
-
         res.status(200).json({ reservation })
     } catch (error) {
         res.status(500).json({ error: error.message })
@@ -93,29 +93,46 @@ exports.getPitchById = async (req, res) => {
 
 exports.getPitchByDate = async (req, res) => {
     try {
+        const { date, hour } = req.body; // Aranacak tarih ve saat
 
-        const { date, hour } = req.body; // Aranacak saha adı
+        const pitchesRemove = [];
+        const pitches = await Pitch.find(); // Tüm sahaları getir
 
-        const pitchesRemove = []
-        const pitches = await Pitch.find()
+        // İstenilen tarih ve saat için dolu sahaları listele
         pitches.map((pitch) => {
             pitch.reservations.map((reservation) => {
-                if (reservation.start_time === hour && reservation.date.getMonth() === new Date(date).getMonth() && reservation.date.getDay() === new Date(date).getDay() ) {
-                    pitchesRemove.push(pitch);
+                const resDate = new Date(reservation.date);
+                const targetDate = new Date(date);
+
+                const sameDay = 
+                    resDate.getDate() === targetDate.getDate() &&
+                    resDate.getMonth() === targetDate.getMonth() &&
+                    resDate.getFullYear() === targetDate.getFullYear();
+
+                if (reservation.start_time === hour && sameDay) {
+                    pitchesRemove.push(pitch); // Eğer doluysa, listeye ekle
                 }
             });
         });
 
-        var filteredPitches = pitches.filter(function (pitch) {
-            return !pitchesRemove.includes(pitch);
-        });
-        res.status(200).json({ filteredPitches });
+        // Dolu sahaları çıkararak kullanılabilir sahaları bul
+        const filteredPitches = pitches.filter((pitch) => !pitchesRemove.includes(pitch));
+
+        // Sahipleri bulmak için ownerId'leri kullan
+        const ownerIds = filteredPitches.map((pitch) => pitch.owner); // Sahipleri ayıkla
+        const uniqueOwnerIds = [...new Set(ownerIds)]; // Dublike olmaması için uniq yap
+
+        // Sahipleri DB'den getir
+        const owners = await Owner.find({ _id: { $in: uniqueOwnerIds } });
+        console.log(owners)
+        res.status(200).json({ owners }); // Sahipleri döndür
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message }); // Hata varsa döndür
     }
 };
 
 const schedule = require('node-schedule');
+const User = require("../models/User.js");
 
 exports.reservePitch = async (req, res) => {
     try {
@@ -128,8 +145,10 @@ exports.reservePitch = async (req, res) => {
             return res.status(404).json({ message: "Pitch not found" });
         }
 
-        await pitch.reservePitch(start_time, req.user._id, reservationName, req.user.phoneNumber, new Date(date));
-
+        const reservation = await pitch.reservePitch(start_time, req.user._id, reservationName, req.user.phoneNumber, new Date(date));
+        const user = await User.findById(req.user._id)
+        user.reservationsHistory.push(reservation)
+        await user.save()
         res.status(201).json({ message: "Reservation created successfully" });
         // const pitch = await Pitch.findById(req.params.id);
         // const { dayName, start_time, pitchId, reservationPhoneNumber, reservationName, user_id } = req.body;

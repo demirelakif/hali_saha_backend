@@ -51,7 +51,6 @@ var PitchSchema = new Schema({
     reservations: [ReservationSchema],
     features: SahaOzellikleriSchema,
     location: { type: LocationSchema, required: true, index: '2dsphere' },
-    rating: { type: Number, required: true, default: 5 }
 },
     { timestamps: true }
 );
@@ -126,12 +125,14 @@ PitchSchema.methods.reservePitch = async function (start_time, user_id, reservat
             user_id: user_id,
             date: date
         };
-
         this.reservations.push(reservation);
+        const reservation_ = this.reservations.find((reservation) => {
+            // Arama koşulunu burada belirtin
+            return reservation === reservation; // Örneğin rezervasyonun id'sini kontrol et
+          });
         await this.save();
-
         //console.log('Saha rezerve edildi:', this);
-        return this; // Opsiyonel olarak, rezerve edilen sahayı geri döndürebilirsiniz.
+        return reservation_; // Opsiyonel olarak, rezerve edilen sahayı geri döndürebilirsiniz.
     } catch (error) {
         console.error('Hata:', error.message);
         throw error;

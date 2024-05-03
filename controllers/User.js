@@ -3,6 +3,7 @@ const auth = require("../middleware/Auth");
 const { validationResult } = require("express-validator")
 const jwt = require('jsonwebtoken');
 const Pitch = require("../models/Pitch");
+const Owner = require("../models/Owner");
 
 exports.signup = (req, res) => {
     const errors = validationResult(req)
@@ -85,37 +86,30 @@ exports.deleteUser = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
     try {
-        // Kullanıcının rezervasyon geçmişini alır
         const user = await User.findById(req.user._id);
         const resUserIds = user.reservationsHistory || [];
 
-        // Tüm sahaları getirir
         const pitches = await Pitch.find();
-
-        // Eşleşen rezervasyonları depolamak için boş bir dizi oluşturur
         const matchedReservations = [];
 
-        // Tüm sahalar ve kullanıcı kimlikleri üzerinde paralel işlem yapar
-        await Promise.all(pitches.map(async (pitch) => {
-            // Her saha için rezervasyonları tarar
-            const filteredReservations = pitch.reservations.filter((reservation) => {
-                // Her rezervasyon için kullanıcı kimliğini kontrol eder
-                if (resUserIds.includes(reservation._id)) {
-                    matchedReservations.push({ reservation: reservation, pitch: pitch });
+        // Asenkron olarak bütün sahaları ve rezervasyonları kontrol et
+        await Promise.all(
+            pitches.map(async (pitch) => {
+                for (const reservation of pitch.reservations) {
+                    if (resUserIds.includes(reservation._id)) {
+                        const owner = await Owner.findById(pitch.owner);
+                        matchedReservations.push({ reservation, owner });
+                    }
                 }
+            })
+        );
 
-            });
-
-
-        }));
-
-        // Eşleşen rezervasyonları geri döndürür
         return res.json(matchedReservations);
     } catch (error) {
-        // Hata durumunda uygun bir hata mesajı döndürür
-        return res.status(500).json({ message: "Sunucu hatası" });
+        return res.status(500).json({ message: "Sunucu hatası", error: error.message });
     }
-}
+};
+
 
 
 
