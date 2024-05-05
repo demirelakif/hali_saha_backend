@@ -237,6 +237,32 @@ exports.updatePitch = async (req, res) => {
     }
 };
 
+exports.cancelReservation = async (req, res) => {
+    try {
+        const {request} = req.body
+        // const pitches = await Pitch.find({ owner: request.owner._id });
+
+        // pitches.forEach((pitch) => {
+        //     pitch.reservations.forEach((reservation) => {
+        //         if (reservation.isAvailable === 'İstek Gönderildi' && reservation._id === request.reservation._id) {
+        //             reservation
+        //         }
+        //     });
+        // });
+
+        await Pitch.updateOne(
+            { owner: request.owner._id },
+            { $pull: { reservations: { _id: request.reservation._id } } }
+        );
+
+        res.json({ message: "Başarıyla Silindi" });
+
+    } catch (error) {
+        console.error('Hata oluştu:', error.message);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
 exports.deletePitch = async (req, res) => {
     try {
         const pitch = await Pitch.findById(req.body.pitchId)
